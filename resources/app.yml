@@ -1,0 +1,48 @@
+resources:
+  apps:
+    nlm_app:
+      name: ${var.app_name}
+      description: Chat con citazioni sulle fonti di un volume Unity Catalog, in stile NotebookLM
+      source_code_path: ../app
+      config:
+        command: ["streamlit", "run", "app.py", "--server.maxUploadSize", "100"]
+        env:
+          - name: NLM_CATALOG
+            value: ${var.catalog}
+          - name: NLM_SCHEMA
+            value: ${var.schema}
+          - name: NLM_VOLUME
+            value: ${var.volume}
+          - name: NLM_AUTH_MODE
+            value: ${var.auth_mode}
+          - name: DATABRICKS_WAREHOUSE_ID
+            value_from: sql-warehouse
+          - name: NLM_LLM_ENDPOINT
+            value_from: llm-endpoint
+          - name: NLM_INGEST_JOB_ID
+            value_from: ingest-job
+      resources:
+        - name: sql-warehouse
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE
+        - name: llm-endpoint
+          serving_endpoint:
+            name: ${var.llm_endpoint}
+            permission: CAN_QUERY
+        - name: ingest-job
+          job:
+            id: ${resources.jobs.nlm_ingest.id}
+            permission: CAN_MANAGE_RUN
+      # Per auth_mode: user (on-behalf-of-user) scommenta gli scope. Non esiste uno scope per i job:
+      # il job di ingest viene sempre avviato dal service principal dell'app.
+      # user_api_scopes:
+      #   - sql
+      #   - files
+      #   - vector-search
+      #   - model-serving
+      #
+      # Per condividere l'app. Attenzione: con auth_mode: app chiunque la usi vede tutte le fonti del volume.
+      # permissions:
+      #   - level: CAN_USE
+      #     group_name: <gruppo>

@@ -1,0 +1,66 @@
+resources:
+  jobs:
+    nlm_setup:
+      name: nlm-setup
+      description: >-
+        Crea tabelle, endpoint e indice di Vector Search e concede i permessi Unity Catalog
+        al service principal dell'app. Idempotente.
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: volume
+          default: ${var.volume}
+        - name: vs_endpoint
+          default: ${var.vs_endpoint}
+        - name: embedding_endpoint
+          default: ${var.embedding_endpoint}
+        - name: app_principal
+          default: ${resources.apps.nlm_app.service_principal_client_id}
+      environments:
+        - environment_key: default
+          spec:
+            # ai_parse_document richiede environment version 3 o successiva.
+            environment_version: "5"
+            dependencies:
+              - databricks-sdk>=0.40.0
+      tasks:
+        - task_key: setup
+          environment_key: default
+          notebook_task:
+            notebook_path: ../src/ingest/00_setup.py
+
+    nlm_ingest:
+      name: nlm-ingest
+      description: >-
+        Parsing, chunking e indicizzazione dei file del volume. Parte all'arrivo di nuovi file
+        (trigger in pausa in modalità development) o quando l'app carica o elimina una fonte.
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+      trigger:
+        file_arrival:
+          url: /Volumes/${var.catalog}/${var.schema}/${var.volume}/
+          min_time_between_triggers_seconds: 60
+          wait_after_last_change_seconds: 60
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: volume
+          default: ${var.volume}
+        - name: reprocess
+          default: "false"
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
+            dependencies:
+              - databricks-sdk>=0.40.0
+      tasks:
+        - task_key: ingest
+          environment_key: default
+          notebook_task:
+            notebook_path: ../src/ingest/01_ingest.py

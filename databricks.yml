@@ -1,0 +1,59 @@
+# Declarative Automation Bundle (ex Databricks Asset Bundle): job di setup e ingest + app.
+# Uso: vedi README.md (databricks bundle deploy / run).
+
+bundle:
+  name: dtbks-nlm
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Catalog Unity Catalog esistente
+  warehouse_id:
+    description: ID del SQL warehouse usato dall'app (serverless consigliato)
+  schema:
+    description: Schema di volume, tabelle e indice
+    default: notebooklm
+  volume:
+    description: Volume delle fonti (una cartella per notebook)
+    default: sources
+  llm_endpoint:
+    description: Endpoint di Model Serving per chat e Studio
+    default: databricks-claude-opus-5-5
+  embedding_endpoint:
+    description: Modello di embedding dell'indice (Qwen3 è multilingue, gte/bge solo inglese)
+    default: databricks-qwen3-embedding-0-6b
+  vs_endpoint:
+    description: Endpoint di Vector Search (AI Search)
+    default: nlm-vector-search
+  app_name:
+    description: Nome dell'app, unico nel workspace (minuscole, cifre e trattini, max 30 caratteri)
+    default: notebooklm
+  auth_mode:
+    description: "app: l'app agisce come il proprio service principal; user: come l'utente collegato (OBO)"
+    default: app
+
+targets:
+  dev:
+    mode: development
+    default: true
+    # workspace:
+    #   host: https://<workspace-url>
+    variables:
+      # La modalità development non rinomina le app: il nome deve restare unico nel workspace.
+      app_name: notebooklm-dev
+      # catalog: <catalog>
+      # warehouse_id: <warehouse-id>
+
+  prod:
+    mode: production
+    workspace:
+      # host: https://<workspace-url>
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    # variables:
+    #   catalog: <catalog>
+    #   warehouse_id: <warehouse-id>
+    # In produzione i job dovrebbero girare come service principal:
+    # run_as:
+    #   service_principal_name: <application-id>

@@ -1,0 +1,9 @@
+[project]
+name = "dtbks-nlm"
+version = "0.1.0"
+description = "NotebookLM-style chat over documents in a Unity Catalog volume"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src/ingest", "app"]
+testpaths = ["tests"]

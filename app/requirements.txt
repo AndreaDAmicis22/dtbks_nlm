@@ -1,0 +1,5 @@
+# Le versioni preinstallate nel runtime di Databricks Apps sono vecchie (es. databricks-sdk 0.33):
+# queste le sostituiscono.
+databricks-sdk>=0.155.0
+openai>=1.40,<4
+streamlit>=1.45,<2
